@@ -56,10 +56,35 @@ How can I explain it?
 plt.show()
 
 
-# PONTO 2
+# PONTO 2: ORGANIZAR DADOS
+
+"""
+reshape gives a new shape (dimension and structure) to some array without changing its data.
+in this code, it formats a 1 line N columns array/vector to a matrix Nx1. This will be used further
+to be able to use matrix mathematical operations. (rewrite more detailed).
+the -1 say to numpy find the total number of lines, the 1 means one column.
+"""
+y_matrix = y.reshape(-1, 1)
+x_matrix = x.reshape(-1, 1)
+
+"""
+Creates a matrix of ones using x_matrix number of lines and 1 column just like x_matrix
+
+It will be used to concatenate the ones matrix with the x_matrix matrix and find the intercept (bias) of the model
+(i think i need to made more research about intercept and these ones matrix to have a more deep
+knowledge)
+"""
+ones = np.ones((x_matrix.shape[0], 1))
+
+"""
+In this step, the ones matrix is concatenated with the x matrix using hstack (horizontal stack), 
+creating a Nx2 matrix.
+Again, this will be used to find the intercept of the model.
+"""
+x_with_ones = np.hstack((ones, x_matrix))
 
 
 
-
+# PONTO 3: IMPLEMENTANDO OS MODELOS MQO, MQO TIKHONOV E MÉDIA DA VARIÁVEL DEPENDENTE.
 
 
