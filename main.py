@@ -87,4 +87,11 @@ x_with_ones = np.hstack((ones, x_matrix))
 
 # PONTO 3: IMPLEMENTANDO OS MODELOS MQO, MQO TIKHONOV E MÉDIA DA VARIÁVEL DEPENDENTE.
 
+# 3.1: MQO Tradicional
 
+def treino_mqo(x, y):
+    beta_hat = np.linalg.inv(x.T @ x)@x.T@y
+    return beta_hat
+
+beta_hat = treino_mqo(x_with_ones, y_matrix)
+print('')
