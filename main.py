@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 importa o .dat de aerogerador. 
 Atualmente, esse data é um array de arrays, onde cada array, assim como no arquivo
 .dat, possui 2 colunas e possui N linhas. As colunas são as variaveis x (independente,
-ou seja, é o input) e a y (dependente, resultado do seu x correspondente
+ou seja, é o input) e a y (dependente, resultado do seu x correspondente)
+Transforma o arquivo .dat em uma matriz que nesse caso é Nx2.
 """
 data = np.loadtxt("aerogerador.dat")
 
@@ -49,9 +50,8 @@ In the context of supervised learning, it is essencial to use the scatter to obs
 ax.scatter(x,y, c="cyan", edgecolor='k')
 
 """
-In this plot, was observed a similarity between the curve made in the visualization of this plot
-and a logarithmic curve.
-How can I explain it?
+Having a good look at the generated plot, it is possible to observe the growing of the generated power as the wind speed
+grows but at some point (~12) the growing of the generated power stops to increase and stagnates.
 """
 plt.show()
 
@@ -60,9 +60,12 @@ plt.show()
 
 """
 reshape gives a new shape (dimension and structure) to some array without changing its data.
-in this code, it formats a 1 line N columns array/vector to a matrix Nx1. This will be used further
-to be able to use matrix mathematical operations. (rewrite more detailed).
+in this code, it formats a 1D vector to a column matrix Nx1 (2 dimensions). This will be used further
+to be able to use matrix mathematical operations (multiply and transpose, i.e). (rewrite more detailed).
 the -1 say to numpy find the total number of lines, the 1 means one column.
+
+The reshape is needed because initially, this is a vector (unidimensional) and the reshape transforms it in a matrix 
+R^Nx1.
 """
 y_matrix = y.reshape(-1, 1)
 x_matrix = x.reshape(-1, 1)
@@ -71,8 +74,24 @@ x_matrix = x.reshape(-1, 1)
 Creates a matrix of ones using x_matrix number of lines and 1 column just like x_matrix
 
 It will be used to concatenate the ones matrix with the x_matrix matrix and find the intercept (bias) of the model
-(i think i need to made more research about intercept and these ones matrix to have a more deep
-knowledge)
+
+The intercept is the "start" point of the model. It is a line that determine where your data will start when x = 0.
+
+In a linear function, the equation is y = ax + b, with a being the angular coefficient and b being the linear coefficient
+or *intercept*. THe angular coefficient determine the gradient (slope) of the line, and the intercept determine the 
+starting point of these line when x = 0. If b does not exist, x will always have his start point in 0 in y axis.
+
+Without the intercept, the regression line preticted by the model will necessarily start in 0. It is a problem because
+if the model values does not really start in 0, the regression line will try to adjust to this values, but because the
+line starts in 0, it will have a way bigger gradient, creating a way bigger MSE (Mean Squared Error) because the prediction
+line does not consider properly the "center" of the dataset.
+
+With the intercept, the model will be able to focus in find the right slope to the independent variables given the data
+trend. The intercept will only care with the height of the line.
+
+Because of the intercept, the model will have a R^p+1x1 (p+1 with p being the number of independent variables and + 1 is the
+beta_0 who represents the intercept)
+
 """
 ones = np.ones((x_matrix.shape[0], 1))
 
