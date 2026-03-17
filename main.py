@@ -108,9 +108,45 @@ x_with_ones = np.hstack((ones, x_matrix))
 
 # 3.1: MQO Tradicional
 
-def treino_mqo(x, y):
+
+"""
+The operation (x.T @ x) condenses the data into an invertible square matrix.
+The inversion of this matrix makes it possible to isolate the beta vector, while the (@ x.T @ y) term 
+projects the observed power onto the feature space to find the slope and intercept that minimize 
+the sum of squared residuals.
+
+error: difference between data and reality
+residual: difference between data and predicted model.
+
+the tradicional LQS fully trust in the data, causing big imprecisions in the estimated line when the data noise is high.
+"""
+
+def treino_mqo_tradicional(x, y):
     beta_hat = np.linalg.inv(x.T @ x)@x.T@y
     return beta_hat
 
-beta_hat = treino_mqo(x_with_ones, y_matrix)
+beta_hat = treino_mqo_tradicional(x_with_ones, y_matrix)
 print('')
+
+
+
+# 3.2 MQO Regularizado (Tikhonov)
+"""
+
+Adds lamb * I to the matrix introduces a penality to huge weights, forcing them to be smaller.
+(do more research about it)
+
+"""
+def treino_mqo_regularizado(x,y, lamb):
+    I = np.eye(x.shape[1])
+
+    beta_hat = np.linalg.inv(x.T@x + lamb*I) @ x.T @ y
+
+    return beta_hat
+
+
+train_lambdas = [0, 0.25, 0.5, 0.75, 1]
+models = {}
+
+for i in train_lambdas:
+    models[i] = treino_mqo_regularizado(x_with_ones, y_matrix, i)
