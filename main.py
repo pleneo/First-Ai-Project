@@ -139,14 +139,83 @@ Adds lamb * I to the matrix introduces a penality to huge weights, forcing them 
 """
 def treino_mqo_regularizado(x,y, lamb):
     I = np.eye(x.shape[1])
-
+    I[0, 0] = 0; # NAO REGULARIZAR O INTERCEPTO
     beta_hat = np.linalg.inv(x.T@x + lamb*I) @ x.T @ y
 
     return beta_hat
 
+# 4. TESTE DO MODELO COM OS VALORES LAMBDA
 
 train_lambdas = [0, 0.25, 0.5, 0.75, 1]
 models = {}
 
 for i in train_lambdas:
     models[i] = treino_mqo_regularizado(x_with_ones, y_matrix, i)
+
+# 5. Random Subsampling Validation - Validação do Modelo
+
+
+percentual_de_treino = .8
+R = 500
+resultados_mse = np.zeros((R, 2 + len(train_lambdas[1:])))
+resultados_r2 = np.zeros((R, 2 + len(train_lambdas[1:])))
+
+for i in range(R):
+    indices = np.random.permutation(len(y_matrix))
+    corte = int(len(y_matrix) * percentual_de_treino)
+
+    idx_treino, idx_teste = indices[:corte], indices[corte:]
+
+    x_treino, x_teste = x_with_ones[idx_treino], x_with_ones[idx_teste]
+    y_treino, y_teste = y_matrix[idx_treino], y_matrix[idx_teste]
+
+    sum_of_squares_total = np.sum((y_teste - np.mean(y_teste)) ** 2)
+
+    y_predicao_media = np.mean(y_treino)
+    ssr_media = np.sum((y_teste - y_predicao_media)**2)
+
+    resultados_mse[i,0] = ssr_media / len(y_teste)
+    resultados_r2[i, 0] = 1 - (ssr_media / sum_of_squares_total)
+
+    for j, lamb in enumerate(train_lambdas):
+        beta_hat1 = treino_mqo_regularizado(x_treino, y_treino, lamb)
+        y_predicao = x_teste@beta_hat1
+
+        ssr_modelo = np.sum((y_teste - y_predicao) ** 2)
+
+        resultados_mse[i, j + 1] = ssr_modelo / len(y_teste)
+        resultados_r2[i, j + 1] = 1 - (ssr_modelo / sum_of_squares_total)
+
+
+media_mse = np.mean(resultados_mse, axis = 0)
+desvio_padrao_mse = np.std(resultados_mse, axis = 0)
+media_r2 = np.mean(resultados_r2, axis=0)
+
+# --- APRESENTAÇÃO DOS RESULTADOS ---
+print(f"\n{'Modelo':<15} | {'MSE Médio':<12} | {'R² Médio':<10} | {'Desvio MSE':<10}")
+print("-" * 60)
+labels = ["Média", "MQO (L=0)", "L=0.25", "L=0.5", "L=0.75", "L=1.0"]
+
+for lab, m, r, d in zip(labels, media_mse, media_r2, desvio_padrao_mse):
+    print(f"{lab:<15} | {m:<12.4f} | {r:<10.4f} | {d:<10.4f}")
+
+# --- PONTO 6: VISUALIZAÇÃO FINAL (PLOT DAS RETAS) ---
+plt.figure(figsize=(10, 6))
+plt.scatter(x, y, c="cyan", alpha=0.4, label="Dados Reais", edgecolor='k')
+
+# Criar pontos para desenhar as retas
+x_range = np.linspace(min(x), max(x), 100).reshape(-1, 1)
+x_range_ones = np.hstack((np.ones((100, 1)), x_range))
+
+# Reta do MQO Tradicional (L=0)
+plt.plot(x_range, x_range_ones @ models[0], 'r-', linewidth=3, label="MQO Tradicional")
+
+# Reta do Modelo de Média
+plt.axhline(y=np.mean(y), color='black', linestyle='--', label="Modelo de Média")
+
+plt.title("Visualização Final: Comparação de Modelos")
+plt.xlabel("Velocidade")
+plt.ylabel("Potência")
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.show()
