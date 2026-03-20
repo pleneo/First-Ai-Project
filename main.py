@@ -53,7 +53,7 @@ ax.scatter(x,y, c="cyan", edgecolor='k')
 Having a good look at the generated plot, it is possible to observe the growing of the generated power as the wind speed
 grows but at some point (~12) the growing of the generated power stops to increase and stagnates.
 """
-plt.show()
+# plt.show()
 
 
 # PONTO 2: ORGANIZAR DADOS
@@ -119,6 +119,16 @@ error: difference between data and reality
 residual: difference between data and predicted model.
 
 the tradicional LQS fully trust in the data, causing big imprecisions in the estimated line when the data noise is high.
+
+em portugues agora por que minha mente ta derretendo:
+
+A função principal desse algortimo é encontrar uma reta que melhor se encaixe entre os pontos dados.
+Com essa reta, é possível prever um valor de um novo x dado com uma margem de erro do modelo e do ruído dos dados
+Nesse caso, o beta_hat na posição 0 B0 possui o intercepto e os outros valores acompanham os x (x1b1 + x2b2+...+xnbn)
+O objetivo do MQO é minimizar a Soma dos Quadrados dos Resíduos  (somatorio dos (yi - ŷi)**2 com yi sendo o valor real
+e ŷi sendo o valor previsto).
+
+Nesse caso, o treinamento do mqo está sendo feito via equação normal. (o que é?)
 """
 
 def treino_mqo_tradicional(x, y):
@@ -187,17 +197,31 @@ for i in range(R):
         resultados_r2[i, j + 1] = 1 - (ssr_modelo / sum_of_squares_total)
 
 
-media_mse = np.mean(resultados_mse, axis = 0)
-desvio_padrao_mse = np.std(resultados_mse, axis = 0)
-media_r2 = np.mean(resultados_r2, axis=0)
+media_mse  = np.mean(resultados_mse, axis=0)
+desvio_mse = np.std(resultados_mse, axis=0)
+maior_mse  = np.max(resultados_mse, axis=0)
+menor_mse  = np.min(resultados_mse, axis=0)
 
-# --- APRESENTAÇÃO DOS RESULTADOS ---
-print(f"\n{'Modelo':<15} | {'MSE Médio':<12} | {'R² Médio':<10} | {'Desvio MSE':<10}")
-print("-" * 60)
+# Para o R²
+media_r2   = np.mean(resultados_r2, axis=0)
+desvio_r2  = np.std(resultados_r2, axis=0)
+maior_r2   = np.max(resultados_r2, axis=0)
+menor_r2   = np.min(resultados_r2, axis=0)
+
+# --- APRESENTAÇÃO DOS RESULTADOS (TABELA COMPLETA) ---
+
 labels = ["Média", "MQO (L=0)", "L=0.25", "L=0.5", "L=0.75", "L=1.0"]
 
-for lab, m, r, d in zip(labels, media_mse, media_r2, desvio_padrao_mse):
-    print(f"{lab:<15} | {m:<12.4f} | {r:<10.4f} | {d:<10.4f}")
+print("\n" + "="*95)
+print(f"{'MODELO':<12} | {'MÉTRICA':<8} | {'MÉDIA':<10} | {'DESVIO':<10} | {'MENOR':<10} | {'MAIOR':<10}")
+print("-" * 95)
+
+for i, lab in enumerate(labels):
+    # Linha do MSE
+    print(f"{lab:<12} | {'MSE':<8} | {media_mse[i]:<10.4f} | {desvio_mse[i]:<10.4f} | {menor_mse[i]:<10.4f} | {maior_mse[i]:<10.4f}")
+    # Linha do R²
+    print(f"{'':<12} | {'R²':<8} | {media_r2[i]:<10.4f} | {desvio_r2[i]:<10.4f} | {menor_r2[i]:<10.4f} | {maior_r2[i]:<10.4f}")
+    print("-" * 95)
 
 # --- PONTO 6: VISUALIZAÇÃO FINAL (PLOT DAS RETAS) ---
 plt.figure(figsize=(10, 6))
@@ -213,7 +237,7 @@ plt.plot(x_range, x_range_ones @ models[0], 'r-', linewidth=3, label="MQO Tradic
 # Reta do Modelo de Média
 plt.axhline(y=np.mean(y), color='black', linestyle='--', label="Modelo de Média")
 
-plt.title("Visualização Final: Comparação de Modelos")
+plt.title("Comparação de Modelos")
 plt.xlabel("Velocidade")
 plt.ylabel("Potência")
 plt.legend()
