@@ -13,7 +13,17 @@ ones = np.ones((x_matrix.shape[0], 1))
 x_with_ones = np.hstack((ones, x_matrix))
 x_without_ones = x_matrix  # Apenas a velocidade
 
+fig = plt.figure()
+ax = fig.add_subplot()
 
+# Define as propriedades básicas de título do subplot ax
+ax.set_xlabel("Velocidade do Vento",  fontsize=12)
+ax.set_ylabel("Potência Gerada",  fontsize=12)
+plt.title('Distribuição dos Dados do Aerogerador', fontsize=14)
+ax.scatter(x,y, c="cyan", edgecolor='k')
+
+
+plt.show()
 # --- PONTO 3: FUNÇÕES DE TREINO ---
 
 def treino_mqo_regularizado(x, y, lamb):
@@ -98,42 +108,54 @@ res_w = calcular_metricas(resultados_mse_with_ones, resultados_r2_with_ones)
 res_wo = calcular_metricas(resultados_mse_without_ones, resultados_r2_without_ones)
 
 # --- APRESENTAÇÃO DOS RESULTADOS ---
-labels = ["Média", "MQO (L=0)", "L=0.25", "L=0.5", "L=0.75", "L=1.0"]
+def imprimir_tabela_final(r_w, r_wo):
+    modelos = [
+        ("Média da variável dependente", r_w, 0),
+        ("MQO tradicional (Com Intercepto)", r_w, 1),
+        ("MQO sem intercepto (Físico)", r_wo, 1),  # Sua análise extra
+        ("MQO regularizado (0,25)", r_w, 2),
+        ("MQO regularizado (0,50)", r_w, 3),
+        ("MQO regularizado (0,75)", r_w, 4),
+        ("MQO regularizado (1,00)", r_w, 5)
+    ]
 
-
-def imprimir_tabela(titulo, r):
-    print(f"\n{'=' * 20} {titulo} {'=' * 20}")
-    print(f"{'MODELO':<12} | {'MÉTRICA':<8} | {'MÉDIA':<10} | {'DESVIO':<10} | {'MENOR':<10} | {'MAIOR':<10}")
-    print("-" * 95)
-    for i, lab in enumerate(labels):
+    print(f"\n{'MODELOS':<35} | {'MÉDIA R²':<10} | {'DESVIO':<10} | {'MAIOR':<10} | {'MENOR':<10}")
+    print("-" * 85)
+    for nome, fonte, idx in modelos:
         print(
-            f"{lab:<12} | {'MSE':<8} | {r['m_mse'][i]:<10.4f} | {r['s_mse'][i]:<10.4f} | {r['min_mse'][i]:<10.4f} | {r['max_mse'][i]:<10.4f}")
-        print(
-            f"{'':<12} | {'R²':<8} | {r['m_r2'][i]:<10.4f} | {r['s_r2'][i]:<10.4f} | {r['min_r2'][i]:<10.4f} | {r['max_r2'][i]:<10.4f}")
-        print("-" * 95)
+            f"{nome:<35} | {fonte['m_r2'][idx]:<10.4f} | {fonte['s_r2'][idx]:<10.4f} | {fonte['max_r2'][idx]:<10.4f} | {fonte['min_r2'][idx]:<10.4f}")
+    print("-" * 85)
 
 
-imprimir_tabela("COM INTERCEPTO (Função Afim)", res_w)
-imprimir_tabela("SEM INTERCEPTO (Regressão na Origem)", res_wo)
+imprimir_tabela_final(res_w, res_wo)
 
-# --- PONTO 6: VISUALIZAÇÃO ---
+# --- PONTO 6: VISUALIZAÇÃO CONSOLIDADA ---
+plt.figure(figsize=(12, 7))
 
-# Figura 1: Com Intercepto
-plt.figure(figsize=(10, 5))
-plt.scatter(x, y, c="cyan", alpha=0.3, label="Dados", edgecolor='k')
-x_range = np.linspace(min(x), max(x), 100).reshape(-1, 1)
-x_range_w = np.hstack((np.ones((100, 1)), x_range))
-plt.plot(x_range, x_range_w @ models_with_ones[0], 'r-', linewidth=3, label="MQO (Com Intercepto)")
-plt.title("Modelo com Intercepto")
-plt.legend();
+# 1. Dados Reais
+plt.scatter(x, y, c="cyan", alpha=0.4, edgecolor='k', s=20, label="Dados Experimentais")
+
+# Gerando pontos para as retas
+x_plot = np.linspace(min(x), max(x), 100).reshape(-1, 1)
+x_plot_w = np.hstack((np.ones((100, 1)), x_plot))
+
+# 2. Linha da Média (Baseline obrigatório) [cite: 17]
+plt.axhline(y=np.mean(y), color='gray', linestyle='--', linewidth=2, label="Média da Var. Dep.")
+
+# 3. MQO Tradicional (λ=0 com Intercepto) [cite: 18, 21]
+plt.plot(x_plot, x_plot_w @ models_with_ones[0], 'r-', linewidth=2.5, label="MQO Tradicional")
+
+# 4. Seu toque de mestre: Reta sem intercepto (Física)
+plt.plot(x_plot, x_plot @ models_without_ones[0], 'k:', linewidth=2.5, label="MQO s/ Intercepto")
+
+# 5. Tikhonov (Exemplo com λ=1.0) [cite: 20, 21]
+plt.plot(x_plot, x_plot_w @ models_with_ones[1], 'purple', linestyle='--', linewidth=2, label="Tikhonov (λ=1.0)")
+
+plt.title('Comparativo de Modelos de Treinamento do Aerogerador', fontsize=14)
+plt.xlabel('Velocidade do Vento', fontsize=12)
+plt.ylabel('Potência Gerada', fontsize=12)
+plt.legend(loc='upper left')
 plt.grid(True, alpha=0.3)
 
-# Figura 2: Sem Intercepto
-plt.figure(figsize=(10, 5))
-plt.scatter(x, y, c="cyan", alpha=0.3, label="Dados", edgecolor='k')
-plt.plot(x_range, x_range @ models_without_ones[0], 'g-', linewidth=3, label="MQO (Sem Intercepto)")
-plt.title("Modelo sem Intercepto 1")
-plt.legend();
-plt.grid(True, alpha=0.3)
-
+plt.tight_layout()
 plt.show()
