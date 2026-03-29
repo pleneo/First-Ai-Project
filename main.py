@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# --- PONTO 1 & 2: CARREGAMENTO E ORGANIZAÇÃO ---
+#PONTO 1 e 2: CARREGAMENTO E ORGANIZAÇÃO
 data = np.loadtxt("aerogerador.dat")
 x = data[:, 0]
 y = data[:, 1]
@@ -24,11 +24,10 @@ ax.scatter(x,y, c="cyan", edgecolor='k')
 
 
 plt.show()
-# --- PONTO 3: FUNÇÕES DE TREINO ---
+# PONTO 3: FUNÇÕES DE TREINO
 
 def treino_mqo_regularizado(x, y, lamb):
     I = np.eye(x.shape[1])
-    # Só zeramos o primeiro índice da identidade se houver intercepto (2 colunas)
     if x.shape[1] > 1:
         I[0, 0] = 0
 
@@ -36,7 +35,7 @@ def treino_mqo_regularizado(x, y, lamb):
     return beta_hat
 
 
-# --- PONTO 4: TREINO DOS MODELOS (Dataset Completo) ---
+# PONTO 4: TREINO DOS MODELOS (Dataset Completo)
 train_lambdas = [0, 0.25, 0.5, 0.75, 1]
 models_with_ones = {}
 models_without_ones = {}
@@ -45,7 +44,7 @@ for i in train_lambdas:
     models_with_ones[i] = treino_mqo_regularizado(x_with_ones, y_matrix, i)
     models_without_ones[i] = treino_mqo_regularizado(x_without_ones, y_matrix, i)
 
-# --- PONTO 5: RANDOM SUBSAMPLING VALIDATION ---
+# PONTO 5: RANDOM SUBSAMPLING VALIDATION
 percentual_de_treino = .8
 R = 500
 
@@ -61,7 +60,6 @@ for i in range(R):
     corte = int(len(y_matrix) * percentual_de_treino)
     idx_tr, idx_te = indices[:corte], indices[corte:]
 
-    # Dados de treino e teste para ambas as versões
     y_tr, y_te = y_matrix[idx_tr], y_matrix[idx_te]
 
     x_tr_w, x_te_w = x_with_ones[idx_tr], x_with_ones[idx_te]
@@ -71,13 +69,11 @@ for i in range(R):
     y_pred_media = np.mean(y_tr)
     ssr_media = np.sum((y_te - y_pred_media) ** 2)
 
-    # Baseline (Média) é igual para ambos
     for mat_mse, mat_r2 in [(resultados_mse_with_ones, resultados_r2_with_ones),
                             (resultados_mse_without_ones, resultados_r2_without_ones)]:
         mat_mse[i, 0] = ssr_media / len(y_te)
         mat_r2[i, 0] = 1 - (ssr_media / sst)
 
-    # Loop para cada Lambda
     for j, lamb in enumerate(train_lambdas):
         # 1. Com Intercepto
         beta_w = treino_mqo_regularizado(x_tr_w, y_tr, lamb)
@@ -94,7 +90,6 @@ for i in range(R):
         resultados_r2_without_ones[i, j + 1] = 1 - (ssr_wo / sst)
 
 
-# --- PROCESSAMENTO ESTATÍSTICO ---
 def calcular_metricas(mse_mat, r2_mat):
     return {
         'm_mse': np.mean(mse_mat, axis=0), 's_mse': np.std(mse_mat, axis=0),
@@ -129,27 +124,26 @@ def imprimir_tabela_final(r_w, r_wo):
 
 imprimir_tabela_final(res_w, res_wo)
 
-# --- PONTO 6: VISUALIZAÇÃO CONSOLIDADA ---
+# PONTO 6: VISUALIZAÇÃO CONSOLIDADA
 plt.figure(figsize=(12, 7))
 
-# 1. Dados Reais
+# 1. Dados
 plt.scatter(x, y, c="cyan", alpha=0.4, edgecolor='k', s=20, label="Dados Experimentais")
 
-# Gerando pontos para as retas
 x_plot = np.linspace(min(x), max(x), 100).reshape(-1, 1)
 x_plot_w = np.hstack((np.ones((100, 1)), x_plot))
 
-# 2. Linha da Média (Baseline obrigatório) [cite: 17]
-plt.axhline(y=np.mean(y), color='gray', linestyle='--', linewidth=2, label="Média da Var. Dep.")
+# 2. Modelo da Média
+plt.axhline(y=np.mean(y), color='gray', linestyle='--', linewidth=2, label=f"Modelo de Média (R²: {res_w['m_r2'][0]:.4f})")
 
-# 3. MQO Tradicional (λ=0 com Intercepto) [cite: 18, 21]
-plt.plot(x_plot, x_plot_w @ models_with_ones[0], 'r-', linewidth=2.5, label="MQO Tradicional")
+# 3. MQO Tradicional (lambda=0 com Intercepto)
+plt.plot(x_plot, x_plot_w @ models_with_ones[0], 'r-', linewidth=2.5, label=f"MQO Tradicional (R²: {res_w['m_r2'][1]:.4f})")
 
-# 4. Seu toque de mestre: Reta sem intercepto (Física)
-plt.plot(x_plot, x_plot @ models_without_ones[0], 'k:', linewidth=2.5, label="MQO s/ Intercepto")
+# 4. Reta sem intercepto
+plt.plot(x_plot, x_plot @ models_without_ones[0], 'k:', linewidth=2.5, label=f"MQO s/ Intercepto (R²: {res_wo['m_r2'][1]:.4f})")
 
-# 5. Tikhonov (Exemplo com λ=1.0) [cite: 20, 21]
-plt.plot(x_plot, x_plot_w @ models_with_ones[1], 'purple', linestyle='--', linewidth=2, label="Tikhonov (λ=1.0)")
+# 5. Tikhonov (lambda=1.0)
+plt.plot(x_plot, x_plot_w @ models_with_ones[1], 'purple', linestyle='--', linewidth=2, label=f"Tikhonov (λ=1.0) (R²: {res_w['m_r2'][5]:.4f})")
 
 plt.title('Comparativo de Modelos de Treinamento do Aerogerador', fontsize=14)
 plt.xlabel('Velocidade do Vento', fontsize=12)
